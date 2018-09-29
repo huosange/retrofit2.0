@@ -1,5 +1,8 @@
 package com.suhao.retrofit;
 
+/**
+ * post提交的对象
+ */
 public class Param {
     private String username;
     private String password;
