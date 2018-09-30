@@ -2,6 +2,8 @@ package com.suhao.retrofit;
 
 import android.Manifest;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,9 +16,11 @@ import com.google.gson.Gson;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private MyService service2;
     private Retrofit retrofit3;
     private MyService service3;
+    private Retrofit retrofit4;
+    private MyService service4;
 
     private Button btn1;
     private Button btn2;
@@ -61,7 +67,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btn9;
     private Button btn10;
     private Button btn11;
+    private Button btn12;
     private TextView content;
+    private DownloadListener downloadListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +77,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         initRetrofit();
         initWidgets();
+
+        downloadListener=new DownloadListener() {
+            @Override
+            public void start() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        content.setText("正在等待服务器写入文件");
+                    }
+                });
+            }
+
+            @Override
+            public void onProgress(final double currentLength) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        DecimalFormat decimalFormat=new DecimalFormat("0.00");
+                        content.setText("进度："+decimalFormat.format(currentLength)+"%");
+                    }
+                });
+            }
+
+            @Override
+            public void onFinish(String localPath) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        content.setText("下载完成");
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        content.setText("下载失败");
+                    }
+                });
+            }
+        };
 
         PermissionGen.with(this)
                 .addRequestCode(100)
@@ -99,6 +150,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn10.setOnClickListener(this);
         btn11=findViewById(R.id.btn11);
         btn11.setOnClickListener(this);
+        btn12=findViewById(R.id.btn12);
+        btn12.setOnClickListener(this);
         content = findViewById(R.id.content);
     }
 
@@ -131,6 +184,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         service3 = retrofit3.create(MyService.class);
+
+        retrofit4=new Retrofit.Builder()
+                .baseUrl("http://appdl.hicloud.com/")
+                .build();
+        service4=retrofit4.create(MyService.class);
     }
 
     private SSLSocketFactory createSSLSocketFactory() {
@@ -144,6 +202,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         return sslSocketFactory;
     }
+
+    final Handler handler=new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            content.setText(msg.obj.toString());
+        }
+    };
 
     @Override
     public void onClick(View v) {
@@ -330,23 +395,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn11:
                 service3.downloadFile().enqueue(new Callback<ResponseBody>() {
                     @Override
-                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                        try{
-                            File file=new File(Environment.getExternalStorageDirectory()+"/Huawei/MagazineUnlock/wangyiyun.mp4");
-                            OutputStream out=new FileOutputStream(file);
-                            InputStream in=response.body().byteStream();
-                            int total=in.available();
-                            double current=0.0;
-                            byte[] buffer=new byte[1024];
-                            int len=0;
-                            while((len=in.read(buffer))>0){
-                                out.write(buffer,0,len);
-                                current+=len;
-                                content.setText("下载进度："+(current/total)*100+"%");
+                    public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
+                        //下载文件放在子线程
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                writeFile2Disk(response,downloadListener,"wangyiyun.mp4");
                             }
-                        }catch (Exception e){
-                            e.printStackTrace();
-                        }
+                        }).start();
+                    }
+
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        Log.i("a","b");
+                    }
+                });
+                break;
+            case R.id.btn12:
+                service4.downloadEclipse().enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
+                        //下载文件放在子线程
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                writeFile2Disk(response,downloadListener,"haha.apk");
+                            }
+                        }).start();
                     }
 
                     @Override
@@ -363,5 +438,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         RequestBody requestBody=RequestBody.create(MediaType.parse("multipart/form-data"),file);
         MultipartBody.Part body=MultipartBody.Part.createFormData(partName,file.getName(),requestBody);
         return body;
+    }
+
+    private void writeFile2Disk(Response<ResponseBody> response,DownloadListener downloadListener,String filename){
+        downloadListener.start();
+        OutputStream out=null;
+        InputStream in=null;
+
+        try{
+            File file=new File(Environment.getExternalStorageDirectory()+"/Huawei/MagazineUnlock/"+filename);
+            out=new FileOutputStream(file);
+            in=response.body().byteStream();
+            long total=in.available();
+            long current=0;
+            byte[] buffer=new byte[1024];
+            int len=0;
+            while((len=in.read(buffer))!=-1){
+                out.write(buffer,0,len);
+                current+=len;
+                double p=((double)current)/total*100;
+                downloadListener.onProgress(p);
+                if(p==100){
+                    downloadListener.onFinish(file.getAbsolutePath());
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            if(out!=null){
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if(in!=null){
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

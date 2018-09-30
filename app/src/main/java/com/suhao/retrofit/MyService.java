@@ -84,4 +84,7 @@ public interface MyService {
 
     @GET("suhao/download")
     Call<ResponseBody> downloadFile();
+
+    @GET("dl/appdl/application/apk/7d/7dc892b7184b4e5ea0563a0b07e0b218/tidemedia.app.jingtiyu.1808111525.apk?sign=portal@portal1537150243192&source=portalsite")
+    Call<ResponseBody> downloadEclipse();
 }
