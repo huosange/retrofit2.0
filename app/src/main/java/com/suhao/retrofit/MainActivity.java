@@ -13,6 +13,9 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btn8;
     private Button btn9;
     private Button btn10;
+    private Button btn11;
     private TextView content;
 
     @Override
@@ -93,6 +97,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn9.setOnClickListener(this);
         btn10=findViewById(R.id.btn10);
         btn10.setOnClickListener(this);
+        btn11=findViewById(R.id.btn11);
+        btn11.setOnClickListener(this);
         content = findViewById(R.id.content);
     }
 
@@ -318,6 +324,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onFailure(Call<ResponseBody> call, Throwable t) {
 
+                    }
+                });
+                break;
+            case R.id.btn11:
+                service3.downloadFile().enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        try{
+                            File file=new File(Environment.getExternalStorageDirectory()+"/Huawei/MagazineUnlock/wangyiyun.mp4");
+                            OutputStream out=new FileOutputStream(file);
+                            InputStream in=response.body().byteStream();
+                            int total=in.available();
+                            double current=0.0;
+                            byte[] buffer=new byte[1024];
+                            int len=0;
+                            while((len=in.read(buffer))>0){
+                                out.write(buffer,0,len);
+                                current+=len;
+                                content.setText("下载进度："+(current/total)*100+"%");
+                            }
+                        }catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        Log.i("a","b");
                     }
                 });
                 break;

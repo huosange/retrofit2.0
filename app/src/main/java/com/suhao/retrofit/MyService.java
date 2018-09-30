@@ -81,4 +81,7 @@ public interface MyService {
     @Multipart
     @POST("suhao/uploadFileAndText")
     Call<ResponseBody> uploadFileAndText(@Part("param") Param param,@Part MultipartBody.Part file);
+
+    @GET("suhao/download")
+    Call<ResponseBody> downloadFile();
 }

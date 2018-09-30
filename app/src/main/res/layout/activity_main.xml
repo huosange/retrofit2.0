@@ -69,6 +69,12 @@
             android:layout_height="wrap_content"
             android:text="图文混传" />
 
+        <Button
+            android:id="@+id/btn11"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="下载文件" />
+
 
         <TextView
             android:id="@+id/content"
