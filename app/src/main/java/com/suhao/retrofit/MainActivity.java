@@ -14,7 +14,9 @@ import com.google.gson.Gson;
 
 import java.io.File;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -53,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btn6;
     private Button btn7;
     private Button btn8;
+    private Button btn9;
+    private Button btn10;
     private TextView content;
 
     @Override
@@ -85,6 +89,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn7.setOnClickListener(this);
         btn8=findViewById(R.id.btn8);
         btn8.setOnClickListener(this);
+        btn9=findViewById(R.id.btn9);
+        btn9.setOnClickListener(this);
+        btn10=findViewById(R.id.btn10);
+        btn10.setOnClickListener(this);
         content = findViewById(R.id.content);
     }
 
@@ -259,12 +267,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
                 break;
             case R.id.btn8:
-                File file=new File(Environment.getExternalStorageDirectory()+"/Huawei/MagazineUnlock/兔子.jpg");
-                RequestBody requestBody=RequestBody.create(MediaType.parse("multipart/form-data"),file);
-                MultipartBody.Part body=MultipartBody.Part.createFormData("aFile",file.getName(),requestBody);
-                Headers headers=body.headers();
-                Log.i("headers",headers.toString());
-                service3.uploadFile(body).enqueue(new Callback<ResponseBody>() {
+                service3.uploadFile(getPart("兔子.jpg","file")).enqueue(new Callback<ResponseBody>() {
                     @Override
                     public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                         try {
@@ -279,6 +282,52 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 });
                 break;
+            case R.id.btn9:
+                List<MultipartBody.Part> files=new ArrayList<>();
+                files.add(getPart("蓝色.jpg","first"));
+                files.add(getPart("石头.jpg","second"));
+
+                service3.uploadFiles(files).enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        try {
+                            content.setText(response.body().string());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        Log.i("a","b");
+                    }
+                });
+                break;
+            case R.id.btn10:
+                Param p = new Param("lidandan", "i love you");
+                service3.uploadFileAndText(p,getPart("塔.jpg","file")).enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                        try {
+                            content.setText(response.body().string());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+                    }
+                });
+                break;
         }
+    }
+
+    private MultipartBody.Part getPart(String filename,String partName){
+        File file=new File(Environment.getExternalStorageDirectory()+"/Huawei/MagazineUnlock/"+filename);
+        RequestBody requestBody=RequestBody.create(MediaType.parse("multipart/form-data"),file);
+        MultipartBody.Part body=MultipartBody.Part.createFormData(partName,file.getName(),requestBody);
+        return body;
     }
 }

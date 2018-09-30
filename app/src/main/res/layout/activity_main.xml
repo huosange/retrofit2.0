@@ -57,6 +57,18 @@
             android:layout_height="wrap_content"
             android:text="上传文件" />
 
+        <Button
+            android:id="@+id/btn9"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="上传多个文件" />
+
+        <Button
+            android:id="@+id/btn10"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="图文混传" />
+
 
         <TextView
             android:id="@+id/content"

@@ -1,5 +1,6 @@
 package com.suhao.retrofit;
 
+import java.util.List;
 import java.util.Map;
 import okhttp3.MultipartBody;
 import okhttp3.ResponseBody;
@@ -12,6 +13,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
+import retrofit2.http.PartMap;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 import retrofit2.http.QueryMap;
@@ -31,12 +33,17 @@ public interface MyService {
     Call<ResponseBody> getTripsByPage(@QueryMap Map<String,Object> map);
 
     /**
-     * post请求必须加上@FormUrlEncoded注解
+     * @Field和@FormUrlEncoded配合使用
      */
     @FormUrlEncoded
     @POST("android.v2/ajax/likeStory.ashx")
     Call<ResponseBody> likeStory(@Field("id") int id,@Field("c") int c);
 
+    /**
+     * @FieldMap@FormUrlEncoded配合使用
+     * @param map
+     * @return
+     */
     @FormUrlEncoded
     @POST("android.v2/ajax/likeStory.ashx")
     Call<ResponseBody> likeStory(@FieldMap Map<String,Object> map);
@@ -59,4 +66,19 @@ public interface MyService {
     @Multipart
     @POST("suhao/upload")
     Call<ResponseBody> uploadFile(@Part MultipartBody.Part file);
+
+    /**
+     * 上传多个文件
+     */
+    @Multipart
+    @POST("suhao/uploadFiles")
+    Call<ResponseBody> uploadFiles(@Part List<MultipartBody.Part> files);
+
+    /**
+     * 图文混传
+     * @Part parameters using the MultipartBody.Part must not include a part name in the annotation.
+     */
+    @Multipart
+    @POST("suhao/uploadFileAndText")
+    Call<ResponseBody> uploadFileAndText(@Part("param") Param param,@Part MultipartBody.Part file);
 }
